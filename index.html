@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dmechas</title>
+  <meta name="description" content="Personal site of dmechas: notes, learnings and projects.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <div class="avatar" aria-hidden="true">dm</div>
+      <h1>Hi, I'm <span class="accent">dmechas</span></h1>
+      <p class="tagline">Building things, learning in public, and keeping notes along the way.</p>
+      <nav class="social">
+        <a href="https://github.com/dmechas">GitHub</a>
+      </nav>
+    </header>
+
+    <section>
+      <h2>Explore</h2>
+      <div class="grid">
+        <!-- Add a new card by copying one of these <a> blocks. -->
+        <a class="card" href="https://dmechas.github.io/notes/">
+          <span class="emoji">📝</span>
+          <h3>Notes</h3>
+          <p>Things I'm learning, written down.</p>
+        </a>
+        <a class="card" href="https://github.com/dmechas?tab=repositories">
+          <span class="emoji">🛠️</span>
+          <h3>Projects</h3>
+          <p>Code and experiments on GitHub.</p>
+        </a>
+        <a class="card soon" aria-disabled="true">
+          <span class="emoji">✨</span>
+          <h3>More soon</h3>
+          <p>Next page goes here.</p>
+        </a>
+      </div>
+    </section>
+
+    <footer>© <span id="year"></span> dmechas</footer>
+  </main>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
