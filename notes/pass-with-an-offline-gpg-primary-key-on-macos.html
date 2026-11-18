@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pass with an offline GPG primary key on macOS · dmechas</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="wrap">
+    <a class="back" href="./">← All notes</a>
+    <article class="article">
+      <h1>pass with an offline GPG primary key on macOS</h1>
+      <time datetime="2026-11-18">Nov 18, 2026</time>
+      <p>How to use <a href="https://www.passwordstore.org/">pass</a> on macOS with the GPG primary key kept offline. The laptop only holds the encryption and signing subkeys. The primary key can only certify (create and extend subkeys) and lives on an encrypted USB stick.</p>
+
+      <h2>1. Create the keys in an offline vault</h2>
+      <p>Format a USB stick as APFS (Encrypted) and name it <code>GPGVAULT</code>. Turn off Wi-Fi.</p>
+      <pre><code>export GNUPGHOME=/Volumes/GPGVAULT/gnupg
+mkdir -m 700 "$GNUPGHOME"
+
+# certify-only primary, no expiry
+gpg --quick-gen-key "Your Name &lt;you@example.com&gt;" ed25519 cert never
+FPR=$(gpg --list-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')
+
+# subkeys, each expiring in 2 years
+gpg --quick-add-key "$FPR" cv25519 encr 2y
+gpg --quick-add-key "$FPR" ed25519 sign 2y
+
+# backups (revocation cert is auto-created in $GNUPGHOME/openpgp-revocs.d/)
+gpg --armor --export-secret-keys    "$FPR" &gt; /Volumes/GPGVAULT/primary-secret.asc
+gpg --armor --export                "$FPR" &gt; /Volumes/GPGVAULT/public.asc
+gpg --armor --export-secret-subkeys "$FPR" &gt; /Volumes/GPGVAULT/subkeys-secret.asc</code></pre>
+      <p>Keep a second copy (another USB stick or a <code>paperkey</code> printout).</p>
+
+      <h2>2. Import only the subkeys on the laptop</h2>
+      <pre><code>unset GNUPGHOME
+gpg --import /Volumes/GPGVAULT/public.asc /Volumes/GPGVAULT/subkeys-secret.asc
+echo "$FPR:6:" | gpg --import-ownertrust
+gpg -K    # must show "sec#": the # means the primary secret is absent</code></pre>
+      <p>To strip the primary from an existing key instead, find its keygrip with <code>gpg -K --with-keygrip</code> (the first one) and delete <code>~/.gnupg/private-keys-v1.d/&lt;keygrip&gt;.key</code>.</p>
+
+      <h2>3. Configure pass with the primary fingerprint</h2>
+      <p>Always use the <strong>primary</strong> fingerprint. gpg picks the right subkey, so rotating a subkey doesn't break anything. pass's signature check accepts the primary fingerprint as well as the signing subkey's.</p>
+      <pre><code># ~/.zshrc
+export PASSWORD_STORE_SIGNING_KEY="&lt;FPR&gt;"   # .gpg-id and extensions must be signed
+export GPG_TTY=$(tty)
+
+pass init "&lt;FPR&gt;"
+pass git init
+git -C ~/.password-store config user.signingkey "&lt;FPR&gt;"
+git -C ~/.password-store config pass.signcommits true</code></pre>
+      <p>Without <code>PASSWORD_STORE_SIGNING_KEY</code>, anyone who can write to the store (git remote, cloud sync) can add their key to <code>.gpg-id</code>. New passwords would then also be encrypted to them.</p>
+      <p>In <code>~/.gnupg/gpg-agent.conf</code>, use <code>pinentry-mac</code> and a short cache (<code>default-cache-ttl 600</code>, <code>max-cache-ttl 1800</code>).</p>
+
+      <h2>4. Maintenance (mount vault, offline, <code>export GNUPGHOME=/Volumes/GPGVAULT/gnupg</code>)</h2>
+      <ul>
+        <li><strong>Extend the expiry:</strong> run <code>gpg --quick-set-expire "$FPR" 2y '*'</code>, re-export <code>public.asc</code> and import it on the laptop.</li>
+        <li><strong>Rotate the encryption subkey:</strong> add a new <code>encr</code> subkey and <em>revoke</em> the old one; don't just let it expire. pass's re-encrypt check counts every non-revoked encryption subkey, expired ones included. Then re-import the subkeys and run <code>pass init "&lt;FPR&gt;"</code> to re-encrypt. Keep the old secret until that's done.</li>
+      </ul>
+
+      <h2>Next step</h2>
+      <p>Move the subkeys to a YubiKey (<code>gpg --edit-key $FPR</code>, then <code>keytocard</code>). Then even the subkeys can't be copied off the laptop. pass works unchanged.</p>
+    </article>
+  </main>
+</body>
+</html>
