@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Setting up this site and the /note workflow · dmechas</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="wrap">
+    <a class="back" href="./">← All notes</a>
+    <article class="article">
+      <h1>Setting up this site and the /note workflow</h1>
+      <time datetime="2026-11-18">Nov 18, 2026</time>
+      <h2>What I built</h2>
+      <p>A static GitHub Pages site: <code>index.html</code> plus <code>style.css</code>, with a notes section under <code>notes/</code>. No build step, so pushing to <code>main</code> publishes it.</p>
+      <h2>Publishing notes from any repo</h2>
+      <p>A helper script, <code>scripts/new-note.sh</code>, reads an HTML body from stdin, writes <code>notes/&lt;slug&gt;.html</code> and adds an entry at the top of the notes index. A <code>/note</code> Claude Code skill clones this repo into a temp directory, runs the script, then commits and pushes.</p>
+      <h2>Gotchas</h2>
+      <ul>
+        <li>Inside the sandbox, SSH remotes fail. Pushing over HTTPS works once a GitHub token is set as a sandbox secret.</li>
+        <li>Skills are loaded at session start, so a newly installed skill only appears after restarting Claude Code.</li>
+      </ul>
+    </article>
+  </main>
+</body>
+</html>
